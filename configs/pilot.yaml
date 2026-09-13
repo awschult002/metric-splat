@@ -1,0 +1,53 @@
+# Metric splat Phase-1 pilot — write once, change deliberately
+# Last updated: 2026-09-13
+
+project_root: /workspace/repos/metric-splat
+dry_run_scene: /workspace/repos/data/Tanks/Francis
+
+capture:
+  target_fps_extract: 3-5
+  sfm_long_edge_px: 1600-2048
+  train_may_use_native_4k: true  # if VRAM allows
+  selected_frames_room: 80-200
+  motion_gap_max_s: 0.5
+  blur: variance_of_laplacian  # or equivalent
+
+camera:
+  model: PINHOLE          # or OPENCV if distortion needed
+  single_camera: true     # one body for pilot; per-body later if mixed
+
+sfm:
+  frontend: hloc
+  features: ALIKED
+  matcher: LightGlue
+  retrieval: EigenPlaces
+  pairs: sequential_neighbors + retrieval
+  backend: glomap
+  mapper: glomap mapper
+  max_num_tracks_rule: "1000 * n_images"
+  # Skip VGGT for anything we keep; FastGS out of pilot
+
+scale:
+  method: apriltag
+  family: tagStandard41h12
+  example_outer_black_square_m: 0.15
+  formula: measured_m / reconstructed_tag_size
+  tags_json: work/room01/tags.json
+
+train:
+  engine: gsplat
+  densify: MCMC            # AbsGrad allowed alternative
+  packed: true
+  ppisp: true              # nv-tlabs/ppisp / current gsplat flag
+  short_schedule_steps: 15000-30000
+  res_comfort_vram_gb: 24
+  export: [ckpt.ply, cameras]
+
+hardware:
+  box_cuda: false          # this agent box — no CUDA
+  train_on: alex_nvidia_box
+
+phase_gates:
+  stop_on_sfm_fail: true
+  stop_on_scale_fail: true
+  no_house_until_phase1_pass: true

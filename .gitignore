@@ -1,0 +1,10 @@
+work/
+__pycache__/
+*.pyc
+.DS_Store
+*.ply
+*.pt
+*.pth
+*.npz
+*.mp4
+*.MOV
